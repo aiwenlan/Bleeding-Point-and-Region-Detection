@@ -1,0 +1,173 @@
+# BlooDet Enhanced Configuration
+# 基于架构图的完整功能配置
+
+# 数据配置
+data:
+  root: ./SurgBlood
+  train_split: splits/train.txt
+  test_split: splits/test.txt
+  val_split: splits/val.txt
+  img_size: 512
+  window_size: 8
+  num_workers: 4
+  pin_memory: true
+
+# 模型配置
+model:
+  # 基础模型选择
+  use_enhanced_model: true  # 使用增强版模型
+  use_enhanced_mask: true   # 使用增强版掩码分支
+  
+  # SAM2配置
+  sam2_config: configs/sam2/sam2_hiera_b+.yaml
+  sam2_ckpt: gallbladder/sam2_base.pt
+  
+  # PWC-Net配置
+  pwcnet_ckpt: gallbladder/pwc-default
+  
+  # 记忆库配置
+  mask_memory_len: 7
+  point_memory_len: 7
+  
+  # 特征维度配置
+  feature_dims:
+    sam2_output: [64, 128, 256]
+    point_branch: 256
+    mask_branch: 256
+    guidance: 128
+  
+  # 跨分支引导配置
+  cross_guidance:
+    enabled: true
+    point_dim: 256
+    mask_dim: 256
+    guidance_dim: 128
+  
+  # 边缘生成器配置 (Wavelet Laplacian Filter)
+  edge_generator:
+    use_wavelet_laplacian: true
+    gabor_scales: [1.0, 2.0, 4.0]
+    gabor_orientations: [0, 45, 90, 135]  # degrees
+    laplacian_types: ["standard", "log", "dog"]
+    channel_attention: true
+    multiscale_enhance: true
+  
+  # 光流集成配置
+  optical_flow:
+    enabled: true
+    pwc_pretrained: true
+    temporal_features: true
+    motion_enhancement: true
+
+# 训练配置
+train:
+  epochs: 40  # 按论文设置为20个训练周期
+  batch_size: 1      # 一次一个8帧窗口
+  lr_encoder: 5e-6   # 论文：image encoder学习率5e-6
+  lr_others: 5e-4    # 论文：other parts学习率5e-4
+  optimizer: adam    # 论文：使用Adam优化器
+  scheduler: linear  # 论文：warm-up + linear decay
+  warmup_epochs: 5
+  weight_decay: 1e-4
+  gradient_clip: 1.0
+  save_interval: 5
+  eval_interval: 5
+  resume: false
+  resume_ckpt: ""
+  mixed_precision: false  # 启用混合精度训练
+  
+  # 训练阶段配置 - 禁用多阶段训练，只进行全模型训练
+  training_stages:
+    enabled: false
+  
+  # 优化器详细配置 (按论文实现细节调整)
+  optimizer_config:
+    type: "Adam"  # 按论文要求使用Adam
+    # 学习率配置按论文要求
+    image_encoder_lr: 5e-6  # 图像编码器使用较小学习率
+    other_parts_lr: 5e-4    # 其他网络部分使用标准学习率
+    weight_decay: 1e-4
+    betas: [0.9, 0.999]
+    eps: 1e-8
+  
+  # 学习率调度详细配置 (按论文实现细节)
+  scheduler_config:
+    type: "LinearDecayWithWarmup"  # 使用热身+线性衰减策略
+    warmup_epochs: 5              # 热身阶段
+    total_epochs: 40              # 总训练轮数按论文设置
+    eta_min: 1e-6
+
+# 损失配置
+loss:
+  # 基础损失权重 (严格按照论文公式9: L = λm*Lmask + λe*Ledge + λs*Lscore + λp*Lpoint)
+  lambda_mask: 1.0    # λm = 1
+  lambda_edge: 1.0    # λe = 1  
+  lambda_score: 1.0   # λs = 1
+  lambda_point: 0.5   # λp = 0.5
+  
+  # 使用固定权重，不使用自适应权重调整
+  
+  # SAM2损失融合权重
+  sam_fusion_weight: 0.3
+
+# 数据增强 - 按论文要求：不使用任何数据增强
+augmentation:
+  enabled: false  # 论文明确说明：No data augmentation is applied during data loading
+
+# 实验配置
+experiment:
+  name: "BlooDet_optimization_perfect"
+
+# 验证配置
+validation:
+  interval: 5  # 每5个epoch验证一次
+  metrics: 
+    - "IoU"           # 出血区域检测 - Intersection over Union
+    - "Dice"          # 出血区域检测 - Dice Coefficient
+    - "PCK_2"         # 出血点定位 - PCK-2% (更严格阈值)
+    - "PCK_5"         # 出血点定位 - PCK-5% (更严格阈值)
+    - "PCK_10"        # 出血点定位 - PCK-10% (更严格阈值)
+  save_best: true
+  early_stopping:
+    enabled: true
+    patience: 15
+    monitor: "val_dice"
+
+# 日志和保存
+logging:
+  log_dir: ./logs
+  tensorboard: true
+  wandb: false
+  wandb_project: "BlooDet_Enhanced"
+  save_dir: ./checkpoints
+  max_keep: 5
+  
+  # 可视化配置
+  visualization:
+    enabled: true
+    save_predictions: true
+    save_attention_maps: true
+    save_guidance_maps: true
+    save_flow_visualizations: true
+    save_edge_maps: true
+    save_heatmaps: true
+    save_interval: 10
+
+# 推理配置
+inference:
+  checkpoint_path: "./checkpoints/best_model.pth"
+  output_dir: "./outputs"
+  threshold: 0.5
+  nms_threshold: 0.3
+  max_detections: 10
+  device: auto  # auto, cpu, cuda
+  
+  # 推理时可视化
+  save_visualizations: true
+  visualization_types:
+    - "predictions"
+    - "attention_maps"
+    - "guidance_maps"
+    - "optical_flow"
+    - "edge_maps"
+
