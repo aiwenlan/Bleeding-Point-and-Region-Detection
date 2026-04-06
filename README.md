@@ -9,7 +9,7 @@
 
 **本仓库为论文复现**：实现对应 [Synergistic Bleeding Region and Point Detection in Laparoscopic Surgical Videos](https://arxiv.org/abs/2503.22174)（arXiv:2503.22174，已录用 CVPR 2026）中的 BlooDet 与 SurgBlood 相关工作流，非官方作者代码。
 
-> **📋 项目状态**: 活跃开发中 | **🔧 版本**: v2.0.0 | **📅 最后更新**: 2024年12月
+> **📋 项目状态**: 活跃开发中 | **🔧 版本**: v2.0.0 | **📅 最后更新**: 2025年11月
 
 ## 🌟 主要特性
 
@@ -67,48 +67,12 @@ BlooDet/
 │   └── download_models.py # 模型下载
 ├── 📁 checkpoints/      # 模型检查点
 ├── train.py             # 训练脚本
-├── evaluate.py          # 评估脚本
-├── quick_start.sh       # 快速启动脚本
-├── requirements.txt     # 依赖列表
-├── INSTALL.md          # 安装指南
-├── ENVIRONMENT.md       # 环境配置
-├── LOSS_FUNCTION_STANDARD.md # 损失函数标准
 └── README.md           # 项目说明
 ```
 
 ## 🚀 快速开始
 
-### 1. 快速安装 (推荐)
-
-#### 方法A: 使用快速启动脚本
-```bash
-# 一键安装和配置
-bash quick_start.sh
-```
-
-#### 方法B: 手动安装
-```bash
-# 创建conda环境 (Surgical-SAM-2需要Python 3.10+)
-conda create -n bloodet python=3.10
-conda activate bloodet
-
-# 安装PyTorch (CUDA 12.1)
-conda install pytorch torchvision torchaudio pytorch-cuda=12.1 -c pytorch -c nvidia
-
-# 安装子项目依赖
-cd Surgical-SAM-2 && pip install -e ".[notebooks]" && cd ..
-cd PWC_Net/PyTorch/external_packages/correlation-pytorch-master && bash make_cuda.sh && cd ../../../../
-
-# 安装BlooDet依赖
-pip install -r requirements.txt
-
-# (可选) 开发者工具 - 仅需要修改源码时安装
-pip install -r requirements-dev.txt
-```
-
-> 📚 **详细安装说明**: [INSTALL.md](INSTALL.md) | **环境配置**: [ENVIRONMENT.md](ENVIRONMENT.md)
-
-### 2. 准备数据
+### 1. 准备数据
 ```bash
 # 下载SurgBlood数据集（请根据实际情况调整）
 # 数据集结构应为：
@@ -121,12 +85,12 @@ SurgBlood/
 python scripts/prepare_dataset_split.py --data_root ./SurgBlood
 ```
 
-### 3. 下载预训练模型
+### 2. 下载预训练模型
 ```bash
 python scripts/download_models.py
 ```
 
-### 4. 训练模型
+### 3. 训练模型
 ```bash
 # 基础训练
 python train.py --config configs/default.yaml
@@ -135,14 +99,6 @@ python train.py --config configs/default.yaml
 python -m torch.distributed.launch --nproc_per_node=2 train.py --config configs/default.yaml
 ```
 
-### 5. 评估模型
-```bash
-# 基础评估
-python evaluate.py --checkpoint checkpoints/best.pth --config configs/default.yaml
-
-# 完整评估（包含可视化）
-python evaluate.py --checkpoint checkpoints/best.pth --visualize --save_predictions
-```
 
 ## 📖 详细使用指南
 
@@ -210,22 +166,6 @@ python train.py --config configs/default.yaml --resume checkpoints/checkpoint_ep
 - **距离误差**: 平均像素距离
 - **置信度评估**: 准确率、精确率、召回率、F1分数
 
-### 🎨 可视化功能
-
-```bash
-# 生成完整的评估报告
-python evaluate.py \
-    --checkpoint checkpoints/best.pth \
-    --visualize \
-    --save_predictions \
-    --output_dir evaluation_results
-```
-
-生成的可视化内容包括：
-- 📊 指标分布图
-- 📈 PCK分析曲线
-- 🖼️ 预测结果对比
-- 📄 交互式HTML报告
 
 ## 🧪 模型架构详解
 
