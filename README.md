@@ -74,15 +74,12 @@ BlooDet/
 
 ### 1. 准备数据
 ```bash
-# 下载SurgBlood数据集（请根据实际情况调整）
+# SurgBlood数据集（相关腹腔镜图像数据标注）
 # 数据集结构应为：
 SurgBlood/
 ├── frames/     # 视频帧
 ├── masks/      # 掩码标注
 └── points/     # 点标注
-
-# 创建数据集分割
-python scripts/prepare_dataset_split.py --data_root ./SurgBlood
 ```
 
 ### 2. 下载预训练模型
